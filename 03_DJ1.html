@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARACA-DJ • TRUE KEY LOCK • LOOP LIBERO</title>
+<style>
+:root {
+  --bg: #0a0c0e;
+  --deck-bg: #15181b;
+  --panel: #1e2226;
+  --accent: #2ef0d0;
+  --warn: #ffb347;
+  --danger: #ff5f6d;
+  --text: #f0f2f4;
+  --sub: #9aa6b2;
+  --border: #2f353b;
+  --beat: rgba(46, 240, 208, 0.4);
+  --beat-down: rgba(255, 95, 109, 0.8);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 16px;
+}
+
+h1 {
+  text-align: center;
+  letter-spacing: 4px;
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--accent);
+  padding: 8px 0 20px;
+  text-transform: uppercase;
+  word-spacing: 6px;
+}
+
+.console {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* DECK */
+.deck {
+  background: var(--deck-bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+}
+
+.deck.active {
+  border-color: var(--accent);
+}
+
+.deck.master {
+  border-color: var(--warn);
+  box-shadow: 0 0 16px rgba(255, 180, 70, 0.3);
+}
+
+.deck.playing .dtitle {
+  color: #90ffc0;
+  text-shadow: 0 0 5px #2ef0d0;
+}
+
+/* HEADER */
+.deck-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.dtitle {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 1rem;
+  flex: 1;
+  letter-spacing: 1px;
+}
+
+.mbadge {
+  font-size: 0.6rem;
+  background: var(--warn);
+  color: #000;
+  padding: 3px 7px;
+  border-radius: 20px;
+  font-weight: 700;
+  display: none;
+  text-transform: uppercase;
+}
+
+.deck.master .mbadge {
+  display: inline-block;
+}
+
+.bpm-box {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 1.1rem;
+  background: #0f1114;
+  color: var(--accent);
+  padding: 3px 9px;
+  border-radius: 30px;
+  border: 1px solid #3a4048;
+  font-weight: 600;
+}
+
+.key-box {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  background: #0f1114;
+  color: #cfaaff;
+  padding: 3px 8px;
+  border-radius: 30px;
+  border: 1px solid #4a3f60;
+  min-width: 48px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.tname {
+  font-size: 0.75rem;
+  color: #ccc;
+  background: #1a1e23;
+  padding: 6px 10px;
+  border-radius: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid #2a2f36;
+}
+
+/* WAVEFORM CONTAINER */
+.ww {
+  position: relative;
+  height: 80px;
+  background: #0c0f12;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: crosshair;
+  border: 1px solid #2c323a;
+  box-shadow: inset 0 2px 4px #00000055;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bgc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ph {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 8px white;
+  pointer-events: none;
+  will-change: left;
+  z-index: 10;
+}
+
+/* ZOOM CONTROLS */
+.zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  background: var(--panel);
+  padding: 6px 10px;
+  border-radius: 30px;
+  flex-wrap: wrap;
+}
+
+.zoom-row label {
+  font-size: 0.75rem;
+  color: var(--accent);
+  min-width: 35px;
+  font-weight: bold;
+}
+
+.zoom-row input {
+  flex: 2;
+  min-width: 100px;
+  height: 5px;
+  accent-color: var(--accent);
+}
+
+.zoom-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  background: #0f1114;
+  color: var(--accent);
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid #3a4048;
+  min-width: 55px;
+  text-align: center;
+}
+
+.zoom-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.zoom-btn {
+  background: #2f353f;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.1s;
+  min-width: 40px;
+}
+
+.zoom-btn:hover {
+  background: #404854;
+}
+
+.zoom-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+
+/* LOOP CONTROLS - NUOVI */
+.loop-section {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.loop-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.loop-title span {
+  font-size: 0.68rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.loop-mode-btn {
+  background: #2f353f;
+  color: #aaa;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.loop-mode-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+
+.loop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.loop-btn {
+  background: #2d333b;
+  color: #b0c0d0;
+  border: none;
+  padding: 6px 0;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.1s;
+}
+
+.loop-btn.on {
+  background: #c56bf0;
+  color: #fff;
+}
+
+.loop-btn.free {
+  background: #3a2e4a;
+  color: #d0b0ff;
+}
+
+.loop-free-controls {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.loop-free-btn {
+  flex: 1;
+  background: #352d42;
+  color: #cfaaff;
+  border: none;
+  padding: 6px 0;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.1s;
+}
+
+.loop-free-btn:hover {
+  background: #4a3a5a;
+}
+
+.loop-free-btn.active {
+  background: #aa88ff;
+  color: #000;
+}
+
+.loop-off-btn {
+  background: #5a3a3a;
+  color: #ddd;
+  border: none;
+  padding: 6px 0;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* PANELS */
+.sub {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sub-title {
+  font-size: 0.68rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* BUTTONS */
+button {
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  transition: 0.08s;
+  letter-spacing: 0.3px;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.bp {
+  background: #2cc56e;
+  color: #000;
+  padding: 8px;
+}
+
+.bs {
+  background: var(--danger);
+  color: #fff;
+  padding: 8px;
+}
+
+.bm {
+  background: var(--warn);
+  color: #000;
+  padding: 8px;
+}
+
+.bsync {
+  background: #3f7ee0;
+  color: #fff;
+  padding: 8px;
+}
+
+.bdef {
+  background: #3a404a;
+  color: #ddd;
+  padding: 5px 10px;
+}
+
+.block {
+  background: #444c58;
+  color: #fff;
+  flex: 1;
+  padding: 8px;
+}
+
+.block.locked {
+  background: #ff4444;
+  color: #fff;
+  box-shadow: 0 0 15px #ff4444;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; box-shadow: 0 0 20px #ff4444; }
+  100% { opacity: 1; }
+}
+
+.bnudge {
+  background: #2a2f37;
+  color: #aaa;
+  padding: 5px 10px;
+  font-size: 0.7rem;
+}
+
+/* GRIDS */
+.g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* SLIDERS */
+.sg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sg label {
+  font-size: 0.7rem;
+  color: var(--sub);
+  display: flex;
+  justify-content: space-between;
+}
+
+input[type=range] {
+  width: 100%;
+  cursor: pointer;
+  accent-color: var(--accent);
+  height: 6px;
+}
+
+input[type=number],
+input.num {
+  background: #0d0f13;
+  border: 1px solid #404854;
+  color: var(--accent);
+  padding: 5px 6px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+/* STATUS BAR */
+.sbar {
+  font-size: 0.65rem;
+  color: var(--sub);
+  text-align: center;
+  min-height: 18px;
+  background: #1e2328;
+  padding: 4px 8px;
+  border-radius: 30px;
+}
+
+/* ZOOM NAV */
+.zoom-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  background: #1a1f24;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.zoom-nav label {
+  font-size: 0.6rem;
+  color: var(--sub);
+}
+
+.zoom-nav input {
+  flex: 1;
+  height: 4px;
+  accent-color: var(--accent);
+}
+
+.zoom-pos {
+  font-size: 0.6rem;
+  color: var(--accent);
+  background: #0f1114;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 45px;
+  text-align: center;
+}
+
+/* MIXER */
+.mixer {
+  grid-column: 1 / -1;
+  background: #141a1f;
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  padding: 18px 22px;
+  margin-top: 10px;
+}
+
+.mx-title {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.mx-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.mx-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 200px;
+}
+
+.cf-lab {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.7rem;
+  color: #aaa;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .console { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .console { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<h1>⚡ MARACA-DJ · TRUE KEY LOCK · LOOP LIBERO/MANUAL ⚡</h1>
+<div class="console" id="console"></div>
+
+<script>
+(function() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AC();
+  
+  // IMPORTANTE: Abilita il time stretching di alta qualità
+  if (ctx.createMediaElementSource) {
+    // Già abilitato di default
+  }
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.8;
+  masterGain.connect(ctx.destination);
+
+  let masterIdx = 0;
+  let cfVal = 0.5;
+  const N = 4;
+
+  // --- Crea deck data con SUPPORTO KEY LOCK VERO ---
+  function createDeckData() {
+    const gainNode = ctx.createGain();
+    gainNode.connect(masterGain);
+    
+    return {
+      buf: null,
+      src: null,
+      gainNode: gainNode,
+      bpm: 120,
+      bpmNative: 120,
+      key: null,
+      keyShift: 0,
+      speed: 1.0,
+      vol: 1.0,
+      playing: false,
+      off: 0,
+      st: 0,
+      beatOffMs: 0,
+      
+      // Loop settings
+      loopBeats: 0,
+      loopStart: 0,
+      loopMode: 'beat', // 'beat' o 'free'
+      freeLoopStart: 0,
+      freeLoopEnd: 0,
+      
+      // TRUE KEY LOCK
+      lockKey: false,     // Quando true, pitch rimane costante
+      
+      peaks: null,
+      zoom: 1.0,
+      zoomPos: 0.5
+    };
+  }
+
+  const D = [];
+  for (let i = 0; i < N; i++) {
+    D.push(createDeckData());
+  }
+
+  // --- Utility ---
+  const $ = id => document.getElementById(id);
+  const status = (i, msg) => { const el = $(`sb-${i}`); if (el) el.textContent = msg; };
+
+  const resumeCtx = () => { if (ctx.state === 'suspended') ctx.resume(); };
+
+  // --- Crossfader ---
+  function cfGain(idx) {
+    return idx === 0 ? 1 - cfVal : idx === 1 ? cfVal : 1.0;
+  }
+
+  function applyVolume(i) {
+    const d = D[i];
+    d.gainNode.gain.setTargetAtTime(d.vol * cfGain(i), ctx.currentTime, 0.015);
+  }
+
+  function setVolume(i, v) {
+    D[i].vol = +v;
+    $(`vv-${i}`).textContent = Math.round(+v * 100);
+    applyVolume(i);
+  }
+
+  function setMasterVol(v) {
+    masterGain.gain.setTargetAtTime(+v, ctx.currentTime, 0.015);
+    $('mvv').textContent = Math.round(+v * 100);
+  }
+
+  function setCF(v) {
+    cfVal = +v;
+    applyVolume(0);
+    applyVolume(1);
+  }
+
+  // --- Render decks ---
+  function renderDecks() {
+    const container = document.getElementById('console');
+    let html = '';
+    const deckNames = ['A', 'B', 'C', 'D'];
+    for (let i = 0; i < N; i++) {
+      html += `
+        <div class="deck" id="dk-${i}">
+          <div class="deck-hdr">
+            <span class="dtitle" id="dt-${i}">DECK ${deckNames[i]}</span>
+            <span class="mbadge" id="mb-${i}">MASTER</span>
+            <span class="key-box" id="kbox-${i}">--</span>
+            <span class="bpm-box" id="bb-${i}">--</span>
+          </div>
+          <input type="file" accept="audio/*" style="font-size:0.75rem; background:#1f252b; border:none; color:#ccc; padding:5px; border-radius:30px;" onchange="window.loadTrack(${i}, this)">
+          <div class="tname" id="tn-${i}">Nessuna traccia</div>
+
+          <!-- WAVEFORM + ZOOM -->
+          <div class="ww" id="ww-${i}" onclick="window.seekClick(${i}, event)">
+            <canvas id="wc-${i}"></canvas>
+            <canvas class="bgc" id="gc-${i}"></canvas>
+            <div class="ph" id="ph-${i}"></div>
+          </div>
+          
+          <!-- ZOOM CONTROLS -->
+          <div class="zoom-row">
+            <label>🔍</label>
+            <input type="range" id="zoom-${i}" min="1" max="10" step="0.1" value="1" oninput="window.setZoom(${i}, this.value)">
+            <span class="zoom-value" id="zoom-val-${i}">1.0x</span>
+          </div>
+          
+          <!-- NAVIGAZIONE ZOOM -->
+          <div class="zoom-nav">
+            <label>⏺️</label>
+            <input type="range" id="zoom-pos-${i}" min="0" max="1" step="0.001" value="0.5" oninput="window.setZoomPos(${i}, this.value)">
+            <span class="zoom-pos" id="zoom-pos-val-${i}">50%</span>
+          </div>
+          
+          <div class="zoom-btns">
+            <button class="zoom-btn" onclick="window.setZoom(${i}, 1)">1x</button>
+            <button class="zoom-btn" onclick="window.setZoom(${i}, 2)">2x</button>
+            <button class="zoom-btn" onclick="window.setZoom(${i}, 4)">4x</button>
+            <button class="zoom-btn" onclick="window.setZoom(${i}, 6)">6x</button>
+            <button class="zoom-btn" onclick="window.setZoom(${i}, 8)">8x</button>
+            <button class="zoom-btn" onclick="window.setZoom(${i}, 10)">10x</button>
+          </div>
+
+          <div class="sub">
+            <div class="sub-title">⚙️ Beat Grid 4/4</div>
+            <div class="row">
+              <label style="white-space:nowrap">Offset (ms):</label>
+              <button class="bnudge" onclick="window.nudge(${i}, -10)">-10</button>
+              <button class="bnudge" onclick="window.nudge(${i}, -1)">-1</button>
+              <input type="number" class="num" id="boff-${i}" value="0" step="1" style="width:60px" oninput="window.setOffset(${i}, this.value)">
+              <button class="bnudge" onclick="window.nudge(${i}, 1)">+1</button>
+              <button class="bnudge" onclick="window.nudge(${i}, 10)">+10</button>
+            </div>
+            <div class="row">
+              <label>BPM manuale:</label>
+              <input type="number" class="num" id="bm-${i}" step="0.1" min="40" max="250" placeholder="auto" style="width:70px" oninput="window.setManualBPM(${i}, this.value)">
+              <button class="bdef" style="padding:5px 10px;" onclick="window.resetBPM(${i})">Auto</button>
+            </div>
+          </div>
+
+          <div class="sub">
+            <div class="sub-title">🎼 Tonalità</div>
+            <div class="row">
+              <label>Rilevata:</label>
+              <span id="kdet-${i}" style="color:#cfaaff;font-size:0.8rem;min-width:30px">--</span>
+              <label>Shift (semi):</label>
+              <input type="number" class="num" id="ks-${i}" value="0" step="1" min="-12" max="12" style="width:55px" oninput="window.setKeyShift(${i}, this.value)">
+            </div>
+          </div>
+
+          <div class="g2">
+            <button class="bp" onclick="window.playDeck(${i})">▶ Play</button>
+            <button class="bs" onclick="window.stopDeck(${i})">⏹ Stop</button>
+            <button class="bm" style="font-size:0.65rem" onclick="window.setMaster(${i})">👑 Master</button>
+            <button class="bsync" style="font-size:0.65rem" onclick="window.syncDeck(${i})">🔁 Sync</button>
+          </div>
+
+          <div class="row">
+            <label>🔒 TRUE KEY LOCK:</label>
+            <button class="block" id="lk-${i}" onclick="window.toggleKeyLock(${i})">KEY LOCK OFF</button>
+          </div>
+
+          <div class="sg">
+            <label>Velocità: <span id="rv-${i}">1.000</span>x</label>
+            <input type="range" id="rs-${i}" min="0.5" max="2.0" step="0.001" value="1" oninput="window.setSpeed(${i}, this.value)">
+          </div>
+          <div class="sg">
+            <label>Volume: <span id="vv-${i}">100</span>%</label>
+            <input type="range" id="vs-${i}" min="0" max="1" step="0.01" value="1" oninput="window.setVolume(${i}, this.value)">
+          </div>
+
+          <!-- LOOP SECTION - NUOVA VERSIONE CON LOOP LIBERO -->
+          <div class="loop-section">
+            <div class="loop-title">
+              <span>🔄 LOOP</span>
+              <button class="loop-mode-btn" id="loop-mode-${i}" onclick="window.toggleLoopMode(${i})">MODE: BEAT</button>
+            </div>
+            
+            <!-- BEAT LOOP (basato su battute) -->
+            <div class="loop-grid" id="beat-loop-${i}">
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 1)">1</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 2)">2</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 3)">3</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 4)">4</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 5)">5</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 6)">6</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 7)">7</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 8)">8</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 12)">12</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 16)">16</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 24)">24</button>
+              <button class="loop-btn" onclick="window.setBeatLoop(${i}, 32)">32</button>
+            </div>
+            
+            <!-- FREE LOOP (manuale) -->
+            <div class="loop-free-controls" id="free-loop-${i}" style="display: none;">
+              <button class="loop-free-btn" id="loop-in-${i}" onclick="window.setLoopIn(${i})">⏺ LOOP IN</button>
+              <button class="loop-free-btn" id="loop-out-${i}" onclick="window.setLoopOut(${i})">⏹ LOOP OUT</button>
+              <button class="loop-free-btn" id="clear-free-${i}" onclick="window.clearFreeLoop(${i})">❌ CLEAR</button>
+            </div>
+            
+            <button class="loop-off-btn" onclick="window.clearAllLoop(${i})">LOOP OFF</button>
+          </div>
+          
+          <div class="sbar" id="sb-${i}"></div>
+        </div>
+      `;
+    }
+    // Mixer
+    html += `
+      <div class="mixer">
+        <div class="mx-title">🎚 MASTER MIXER</div>
+        <div class="mx-inner">
+          <div class="mx-item">
+            <label>Master Volume: <span id="mvv">80</span>%</label>
+            <input type="range" min="0" max="1" step="0.01" value="0.8" oninput="window.setMasterVol(this.value)">
+          </div>
+          <div class="mx-item">
+            <label>Crossfader A ⇄ B</label>
+            <div class="cf-lab"><span>DECK A</span><span>DECK B</span></div>
+            <input type="range" id="cf" min="0" max="1" step="0.001" value="0.5" oninput="window.setCF(this.value)">
+          </div>
+        </div>
+      </div>
+    `;
+    container.innerHTML = html;
+  }
+
+  renderDecks();
+
+  // --- Esponi funzioni base ---
+  window.setVolume = setVolume;
+  window.setMasterVol = setMasterVol;
+  window.setCF = setCF;
+
+  // --- TRUE KEY LOCK - VERSIONE CORRETTA ---
+  window.toggleKeyLock = function(i) {
+    const d = D[i];
+    d.lockKey = !d.lockKey;
+    const btn = $(`lk-${i}`);
+    btn.classList.toggle('locked', d.lockKey);
+    btn.textContent = d.lockKey ? '🔒 KEY LOCKED (pitch fisso)' : 'KEY LOCK OFF';
+    
+    if (d.lockKey) {
+      status(i, '✓ TRUE KEY LOCK attivo - La velocità NON altera il pitch');
+    } else {
+      status(i, 'Key Lock disattivato');
+    }
+    
+    // Aggiorna immediatamente il playback rate se in riproduzione
+    if (d.playing && d.src) {
+      // Con key lock attivo: pitch factor = 1 (NON usare keyShift)
+      // Senza key lock: pitch factor = 2^(keyShift/12)
+      const pitchFactor = d.lockKey ? 1 : Math.pow(2, d.keyShift / 12);
+      const targetRate = d.speed * pitchFactor;
+      
+      // Applica il nuovo rate
+      d.src.playbackRate.setTargetAtTime(targetRate, ctx.currentTime, 0.01);
+      
+      console.log(`KeyLock ${d.lockKey ? 'ON' : 'OFF'}: speed=${d.speed}, pitchFactor=${pitchFactor}, rate=${targetRate}`);
+    }
+  };
+
+  // --- Speed - CORRETTA con rispetto key lock ---
+  window.setSpeed = function(i, v) {
+    const d = D[i];
+    d.speed = +v;
+    $(`rv-${i}`).textContent = (+v).toFixed(3);
+    $(`rs-${i}`).value = +v;
+    
+    // Calcola il rate finale:
+    // - Se key lock attivo: pitch factor = 1 (pitch originale)
+    // - Se key lock non attivo: pitch factor = 2^(keyShift/12)
+    const pitchFactor = d.lockKey ? 1 : Math.pow(2, d.keyShift / 12);
+    const totalRate = d.speed * pitchFactor;
+    
+    if (d.src) {
+      d.src.playbackRate.setTargetAtTime(totalRate, ctx.currentTime, 0.01);
+      console.log(`setSpeed: speed=${d.speed}, pitchFactor=${pitchFactor}, rate=${totalRate}, lockKey=${d.lockKey}`);
+    }
+    
+    // Calcola BPM effettivo (sempre basato sulla velocità)
+    const effBPM = d.bpmNative * d.speed;
+    $(`bb-${i}`).textContent = effBPM.toFixed(1);
+    
+    drawBG(i);
+    
+    if (d.lockKey) {
+      status(i, `BPM: ${effBPM.toFixed(1)} · KEY LOCKED (pitch fisso a ${d.key || '--'})`);
+    } else {
+      status(i, `BPM effettivo: ${effBPM.toFixed(1)}`);
+    }
+  };
+
+  // --- Key shift - CORRETTA ---
+  window.setKeyShift = function(i, v) {
+    const d = D[i];
+    d.keyShift = parseInt(v) || 0;
+    
+    // Applica solo se key lock NON è attivo
+    if (!d.lockKey && d.src) {
+      const pitchFactor = Math.pow(2, d.keyShift / 12);
+      const totalRate = d.speed * pitchFactor;
+      d.src.playbackRate.setTargetAtTime(totalRate, ctx.currentTime, 0.01);
+      console.log(`setKeyShift: shift=${d.keyShift}, rate=${totalRate}`);
+    }
+    
+    // Aggiorna display tonalità
+    updateKeyDisplay(i);
+  };
+
+  function updateKeyDisplay(i) {
+    const d = D[i];
+    if (d.key) {
+      const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      const isMin = d.key.endsWith('m');
+      const baseNote = d.key.replace('m', '');
+      const idx = notes.indexOf(baseNote);
+      if (idx !== -1) {
+        const newIdx = (idx + d.keyShift + 120) % 12;
+        const newNote = notes[newIdx] + (isMin ? 'm' : '');
+        $(`kbox-${i}`).textContent = newNote;
+        
+        if (d.lockKey) {
+          status(i, `Key visual: ${newNote} (pitch originale: ${d.key})`);
+        }
+      }
+    } else {
+      $(`kbox-${i}`).textContent = '--';
+    }
+  }
+
+  // --- Loop Mode Toggle (BEAT / FREE) ---
+  window.toggleLoopMode = function(i) {
+    const d = D[i];
+    d.loopMode = d.loopMode === 'beat' ? 'free' : 'beat';
+    const btn = $(`loop-mode-${i}`);
+    btn.textContent = `MODE: ${d.loopMode.toUpperCase()}`;
+    
+    // Mostra/nascondi controlli appropriati
+    const beatDiv = $(`beat-loop-${i}`);
+    const freeDiv = $(`free-loop-${i}`);
+    
+    if (d.loopMode === 'beat') {
+      beatDiv.style.display = 'grid';
+      freeDiv.style.display = 'none';
+      // Resetta free loop
+      d.freeLoopStart = 0;
+      d.freeLoopEnd = 0;
+    } else {
+      beatDiv.style.display = 'none';
+      freeDiv.style.display = 'flex';
+      // Disabilita beat loop
+      d.loopBeats = 0;
+      document.querySelectorAll(`#beat-loop-${i} .loop-btn`).forEach(b => b.classList.remove('on'));
+    }
+    
+    // Se in riproduzione, riavvia con nuove impostazioni
+    if (d.playing) window.playDeck(i);
+  };
+
+  // --- Beat Loop (basato su battute) ---
+  window.setBeatLoop = function(i, beats) {
+    const d = D[i];
+    if (d.loopMode !== 'beat') return;
+    
+    d.loopBeats = beats;
+    
+    // Calcola loop start sul beat più vicino
+    if (d.bpm > 0 && d.buf) {
+      const beatSec = 60 / d.bpm;
+      const currentPos = d.playing ? ((ctx.currentTime - d.st) * d.speed) % d.buf.duration : d.off;
+      
+      // Arrotonda al beat più vicino considerando offset
+      const offSec = d.beatOffMs / 1000;
+      const beatsFromStart = (currentPos - offSec) / beatSec;
+      const roundedBeats = Math.round(beatsFromStart);
+      d.loopStart = offSec + (roundedBeats * beatSec);
+      
+      // Assicura che sia dentro i limiti
+      if (d.loopStart < 0) d.loopStart = 0;
+      if (d.loopStart + (beatSec * beats) > d.buf.duration) {
+        d.loopStart = d.buf.duration - (beatSec * beats);
+      }
+    } else {
+      d.loopStart = d.off;
+    }
+    
+    // UI feedback
+    document.querySelectorAll(`#beat-loop-${i} .loop-btn`).forEach(b => {
+      b.classList.toggle('on', b.textContent == beats);
+    });
+    
+    if (d.playing) window.playDeck(i);
+    status(i, `Beat Loop: ${beats} battute`);
+  };
+
+  // --- Free Loop (manuale) ---
+  window.setLoopIn = function(i) {
+    const d = D[i];
+    if (d.loopMode !== 'free' || !d.buf) return;
+    
+    d.freeLoopStart = d.playing ? ((ctx.currentTime - d.st) * d.speed) % d.buf.duration : d.off;
+    
+    $(`loop-in-${i}`).classList.add('active');
+    $(`loop-out-${i}`).classList.remove('active');
+    
+    status(i, `Loop IN impostato a ${d.freeLoopStart.toFixed(2)}s`);
+  };
+
+  window.setLoopOut = function(i) {
+    const d = D[i];
+    if (d.loopMode !== 'free' || !d.buf) return;
+    
+    d.freeLoopEnd = d.playing ? ((ctx.currentTime - d.st) * d.speed) % d.buf.duration : d.off;
+    
+    // Assicura che start < end
+    if (d.freeLoopEnd <= d.freeLoopStart) {
+      d.freeLoopEnd = d.freeLoopStart + 1; // Default 1 secondo
+    }
+    
+    $(`loop-out-${i}`).classList.add('active');
+    
+    // Attiva il loop
+    if (d.playing) {
+      // Riavvia con il loop libero
+      const src = d.src;
+      if (src) {
+        src.loopStart = d.freeLoopStart;
+        src.loopEnd = d.freeLoopEnd;
+        src.loop = true;
+      }
+    }
+    
+    status(i, `Loop libero: ${d.freeLoopStart.toFixed(2)}s → ${d.freeLoopEnd.toFixed(2)}s`);
+  };
+
+  window.clearFreeLoop = function(i) {
+    const d = D[i];
+    d.freeLoopStart = 0;
+    d.freeLoopEnd = 0;
+    
+    $(`loop-in-${i}`).classList.remove('active');
+    $(`loop-out-${i}`).classList.remove('active');
+    
+    if (d.playing) {
+      // Disabilita loop nel source corrente
+      if (d.src) {
+        d.src.loop = false;
+      }
+      // Riavvia senza loop
+      window.playDeck(i);
+    }
+    
+    status(i, 'Loop libero cancellato');
+  };
+
+  window.clearAllLoop = function(i) {
+    const d = D[i];
+    d.loopBeats = 0;
+    d.freeLoopStart = 0;
+    d.freeLoopEnd = 0;
+    
+    // UI reset
+    document.querySelectorAll(`#beat-loop-${i} .loop-btn`).forEach(b => b.classList.remove('on'));
+    $(`loop-in-${i}`)?.classList.remove('active');
+    $(`loop-out-${i}`)?.classList.remove('active');
+    
+    if (d.playing) window.playDeck(i);
+    status(i, 'Loop OFF');
+  };
+
+  // --- Play (RISCRITTO con corretto key lock) ---
+  window.playDeck = function(i) {
+    const d = D[i];
+    if (!d.buf) { alert('Carica un file audio'); return; }
+    resumeCtx();
+    
+    // Ferma sorgente precedente
+    if (d.src) { 
+      try { d.src.stop(); } catch(e) {} 
+      d.src = null; 
+    }
+    
+    const src = ctx.createBufferSource();
+    src.buffer = d.buf;
+    
+    // Calcola il rate: 
+    // - Se lockKey = true: pitch factor = 1 (pitch originale)
+    // - Se lockKey = false: pitch factor = 2^(keyShift/12)
+    const pitchFactor = d.lockKey ? 1 : Math.pow(2, d.keyShift / 12);
+    const playbackRate = d.speed * pitchFactor;
+    
+    src.playbackRate.value = playbackRate;
+    console.log(`playDeck ${i}: speed=${d.speed}, pitchFactor=${pitchFactor}, rate=${playbackRate}, lockKey=${d.lockKey}`);
+    
+    src.connect(d.gainNode);
+
+    let offset = Math.max(0, d.off % d.buf.duration);
+    
+    // Configura loop in base alla modalità
+    if (d.loopMode === 'beat' && d.loopBeats > 0 && d.bpm > 0) {
+      const beatSec = 60 / d.bpm;
+      const loopLen = beatSec * d.loopBeats;
+      const ls = d.loopStart;
+      const le = ls + loopLen;
+      if (le <= d.buf.duration) {
+        src.loopStart = ls; 
+        src.loopEnd = le; 
+        src.loop = true;
+        offset = ls + ((offset - ls + loopLen) % loopLen);
+      } else {
+        src.loop = true;
+      }
+    } 
+    else if (d.loopMode === 'free' && d.freeLoopEnd > d.freeLoopStart) {
+      src.loopStart = d.freeLoopStart;
+      src.loopEnd = d.freeLoopEnd;
+      src.loop = true;
+      offset = d.freeLoopStart + ((offset - d.freeLoopStart + (d.freeLoopEnd - d.freeLoopStart)) % (d.freeLoopEnd - d.freeLoopStart));
+    }
+    else {
+      src.loop = true; // Loop sull'intera traccia
+    }
+
+    src.start(0, offset);
+    d.src = src;
+    d.st = ctx.currentTime - offset / d.speed;
+    d.playing = true;
+    $(`dk-${i}`).classList.add('playing');
+    
+    src.onended = () => {
+      if (d.src === src) {
+        d.playing = false;
+        d.src = null;
+        $(`dk-${i}`).classList.remove('playing');
+      }
+    };
+    
+    if (d.lockKey) {
+      status(i, `▶ Riproduzione con KEY LOCK - pitch fisso a ${d.key || '--'}`);
+    }
+  };
+
+  window.stopDeck = function(i) {
+    const d = D[i];
+    if (d.playing && d.buf) {
+      const elapsed = (ctx.currentTime - d.st) * d.speed;
+      d.off = elapsed % d.buf.duration;
+    }
+    if (d.src) { try { d.src.stop(); } catch(e) {} d.src = null; }
+    d.playing = false;
+    $(`dk-${i}`).classList.remove('playing');
+  };
+
+  window.seekClick = function(i, e) {
+    const d = D[i];
+    if (!d.buf) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = clickX / rect.width;
+    
+    const zoom = d.zoom || 1;
+    const zoomPos = d.zoomPos !== undefined ? d.zoomPos : 0.5;
+    
+    const viewSize = 1.0 / zoom;
+    let viewStart = zoomPos - viewSize / 2;
+    
+    if (viewStart < 0) viewStart = 0;
+    if (viewStart + viewSize > 1) viewStart = 1 - viewSize;
+    
+    const normPos = viewStart + ratio * viewSize;
+    d.off = Math.max(0, Math.min(1, normPos)) * d.buf.duration;
+    
+    if (d.playing) window.playDeck(i);
+  };
+
+  // --- Load track (aggiornato) ---
+  window.loadTrack = async function(i, el) {
+    const file = el.files[0];
+    if (!file) return;
+    resumeCtx();
+    $(`tn-${i}`).textContent = file.name;
+    $(`bb-${i}`).textContent = '...';
+    $(`kbox-${i}`).textContent = '...';
+    status(i, 'Caricamento...');
+    const d = D[i];
+    if (d.playing) window.stopDeck(i);
+    const ab = await file.arrayBuffer();
+    ctx.decodeAudioData(ab, (buf) => {
+      d.buf = buf;
+      d.off = 0;
+      d.speed = 1.0;
+      d.beatOffMs = 0;
+      d.loopBeats = 0;
+      d.keyShift = 0;
+      d.lockKey = false;
+      d.zoom = 1.0;
+      d.zoomPos = 0.5;
+      d.loopMode = 'beat';
+      d.freeLoopStart = 0;
+      d.freeLoopEnd = 0;
+      
+      $(`lk-${i}`).classList.remove('locked');
+      $(`lk-${i}`).textContent = 'KEY LOCK OFF';
+      $(`rs-${i}`).value = 1;
+      $(`rv-${i}`).textContent = '1.000';
+      $(`boff-${i}`).value = 0;
+      $(`bm-${i}`).value = '';
+      $(`ks-${i}`).value = 0;
+      $(`zoom-${i}`).value = 1;
+      $(`zoom-val-${i}`).textContent = '1.0x';
+      $(`zoom-pos-${i}`).value = 0.5;
+      $(`zoom-pos-val-${i}`).textContent = '50%';
+      $(`loop-mode-${i}`).textContent = 'MODE: BEAT';
+      
+      document.querySelectorAll(`#beat-loop-${i} .loop-btn`).forEach(b => b.classList.remove('on'));
+      $(`beat-loop-${i}`).style.display = 'grid';
+      $(`free-loop-${i}`).style.display = 'none';
+      
+      $(`dk-${i}`).classList.add('active');
+      
+      d.peaks = buildPeaks(buf, 1000);
+      drawWF(i);
+      
+      status(i, 'Analisi BPM...');
+      const bpm = detectBPM(buf);
+      d.bpm = bpm; d.bpmNative = bpm;
+      $(`bb-${i}`).textContent = bpm.toFixed(1);
+      drawBG(i);
+      
+      status(i, 'Analisi tonalità...');
+      detectKey(buf, (key) => {
+        d.key = key;
+        $(`kdet-${i}`).textContent = key || '--';
+        $(`kbox-${i}`).textContent = key || '--';
+        status(i, 'Pronto');
+      });
+    }, (err) => {
+      console.error(err);
+      status(i, 'Errore caricamento');
+    });
+  };
+
+  window.setManualBPM = function(i, v) {
+    const b = +v;
+    if (isNaN(b) || b < 20) return;
+    D[i].bpm = b;
+    D[i].bpmNative = b;
+    $(`bb-${i}`).textContent = b.toFixed(1);
+    drawBG(i);
+  };
+
+  window.resetBPM = function(i) {
+    if (!D[i].buf) return;
+    const bpm = detectBPM(D[i].buf);
+    D[i].bpm = bpm;
+    D[i].bpmNative = bpm;
+    $(`bb-${i}`).textContent = bpm.toFixed(1);
+    $(`bm-${i}`).value = '';
+    drawBG(i);
+  };
+
+  window.setOffset = function(i, v) {
+    D[i].beatOffMs = +v || 0;
+    drawBG(i);
+  };
+
+  window.nudge = function(i, delta) {
+    D[i].beatOffMs += delta;
+    $(`boff-${i}`).value = D[i].beatOffMs;
+    drawBG(i);
+  };
+
+  // --- Zoom funzioni ---
+  window.setZoom = function(i, z) {
+    const d = D[i];
+    d.zoom = Math.max(1, Math.min(10, +z));
+    $(`zoom-${i}`).value = d.zoom;
+    $(`zoom-val-${i}`).textContent = d.zoom.toFixed(1) + 'x';
+    
+    const btns = document.querySelectorAll(`#dk-${i} .zoom-btn`);
+    btns.forEach(btn => {
+      btn.classList.remove('active');
+      const btnVal = parseFloat(btn.textContent.replace('x', ''));
+      if (Math.abs(btnVal - d.zoom) < 0.1) {
+        btn.classList.add('active');
+      }
+    });
+    
+    drawWF(i);
+    drawBG(i);
+  };
+
+  window.setZoomPos = function(i, pos) {
+    const d = D[i];
+    d.zoomPos = Math.max(0, Math.min(1, +pos));
+    $(`zoom-pos-${i}`).value = d.zoomPos;
+    $(`zoom-pos-val-${i}`).textContent = Math.round(d.zoomPos * 100) + '%';
+    
+    drawWF(i);
+    drawBG(i);
+  };
+
+  // --- Waveform functions ---
+  function buildPeaks(buf, n) {
+    const data = buf.getChannelData(0);
+    const blockSize = Math.floor(data.length / n);
+    const peaks = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      let max = 0;
+      const start = i * blockSize;
+      for (let j = 0; j < blockSize; j++) {
+        const val = Math.abs(data[start + j] || 0);
+        if (val > max) max = val;
+      }
+      peaks[i] = max;
+    }
+    return peaks;
+  }
+
+  function drawWF(i) {
+    const d = D[i];
+    if (!d.peaks) return;
+    const ww = $(`ww-${i}`);
+    const cv = $(`wc-${i}`);
+    if (!ww || !cv) return;
+    cv.width = ww.clientWidth || 320;
+    cv.height = ww.clientHeight || 80;
+    const W = cv.width, H = cv.height;
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, W, H);
+    
+    const grad = c.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#102a24');
+    grad.addColorStop(1, '#03100d');
+    c.fillStyle = grad;
+    c.fillRect(0, 0, W, H);
+
+    const zoom = d.zoom || 1;
+    const zoomPos = d.zoomPos !== undefined ? d.zoomPos : 0.5;
+    const totalPeaks = d.peaks.length;
+    
+    const viewSize = 1.0 / zoom;
+    let viewStart = zoomPos - viewSize / 2;
+    let viewEnd = zoomPos + viewSize / 2;
+    
+    if (viewStart < 0) {
+      viewStart = 0;
+      viewEnd = viewSize;
+    }
+    if (viewEnd > 1) {
+      viewEnd = 1;
+      viewStart = 1 - viewSize;
+    }
+
+    c.fillStyle = '#2ef0d0';
+    const mid = H / 2;
+    
+    for (let x = 0; x < W; x++) {
+      const normX = x / W;
+      const t = viewStart + normX * (viewEnd - viewStart);
+      const peakIdx = Math.floor(t * totalPeaks);
+      if (peakIdx >= 0 && peakIdx < totalPeaks) {
+        const amp = d.peaks[peakIdx] * mid * 0.9;
+        c.fillRect(x, mid - amp, 1, amp * 2);
+      }
+    }
+    
+    c.strokeStyle = '#457066';
+    c.beginPath(); 
+    c.moveTo(0, mid); 
+    c.lineTo(W, mid); 
+    c.stroke();
+  }
+
+  function drawBG(i) {
+    const d = D[i];
+    const ww = $(`ww-${i}`);
+    const cv = $(`gc-${i}`);
+    if (!ww || !cv) return;
+    cv.width = ww.clientWidth || 320;
+    cv.height = ww.clientHeight || 80;
+    const W = cv.width, H = cv.height;
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, W, H);
+    
+    if (!d.buf || !d.bpm) return;
+    
+    const dur = d.buf.duration;
+    const beatSec = 60 / d.bpm;
+    const offSec = d.beatOffMs / 1000;
+    const zoom = d.zoom || 1;
+    const zoomPos = d.zoomPos !== undefined ? d.zoomPos : 0.5;
+    
+    const viewSize = 1.0 / zoom;
+    let viewStart = zoomPos - viewSize / 2;
+    let viewEnd = zoomPos + viewSize / 2;
+    
+    if (viewStart < 0) {
+      viewStart = 0;
+      viewEnd = viewSize;
+    }
+    if (viewEnd > 1) {
+      viewEnd = 1;
+      viewStart = 1 - viewSize;
+    }
+
+    const tStart = viewStart * dur;
+    const tEnd = viewEnd * dur;
+    
+    let t = offSec % beatSec;
+    while (t < tStart - beatSec) t += beatSec;
+    
+    let beatNum = Math.floor((t - offSec) / beatSec);
+    
+    while (t <= tEnd + beatSec) {
+      if (t >= tStart - beatSec * 0.5 && t <= tEnd + beatSec * 0.5) {
+        const x = ((t - tStart) / (tEnd - tStart)) * W;
+        if (x >= -5 && x <= W + 5) {
+          const isDown = (beatNum % 4 === 0);
+          c.beginPath();
+          c.strokeStyle = isDown ? 'rgba(255, 100, 100, 0.9)' : 'rgba(46, 240, 208, 0.5)';
+          c.lineWidth = isDown ? 2.5 : 1.2;
+          c.moveTo(x, isDown ? 0 : H * 0.2);
+          c.lineTo(x, H);
+          c.stroke();
+          
+          if (isDown) {
+            c.fillStyle = '#ffb0b0';
+            c.font = 'bold 8px monospace';
+            c.fillText(Math.floor(beatNum / 4) + 1, x + 3, 14);
+          }
+        }
+      }
+      t += beatSec;
+      beatNum++;
+      if (beatNum > 2000) break;
+    }
+  }
+
+  function updatePlayheadPos(i, pos) {
+    const d = D[i];
+    if (!d.buf) return;
+    
+    const zoom = d.zoom || 1;
+    const zoomPos = d.zoomPos !== undefined ? d.zoomPos : 0.5;
+    
+    const viewSize = 1.0 / zoom;
+    let viewStart = zoomPos - viewSize / 2;
+    let viewEnd = zoomPos + viewSize / 2;
+    
+    if (viewStart < 0) {
+      viewStart = 0;
+      viewEnd = viewSize;
+    }
+    if (viewEnd > 1) {
+      viewEnd = 1;
+      viewStart = 1 - viewSize;
+    }
+    
+    const normPos = pos / d.buf.duration;
+    
+    if (normPos >= viewStart && normPos <= viewEnd) {
+      const relativePos = (normPos - viewStart) / (viewEnd - viewStart);
+      $(`ph-${i}`).style.left = (relativePos * 100) + '%';
+      $(`ph-${i}`).style.opacity = '1';
+    } else {
+      $(`ph-${i}`).style.opacity = '0.3';
+      if (normPos < viewStart) {
+        $(`ph-${i}`).style.left = '0%';
+      } else {
+        $(`ph-${i}`).style.left = '100%';
+      }
+    }
+  }
+
+  // --- BPM detection ---
+  function detectBPM(buf) {
+    const sr = buf.sampleRate;
+    const data = buf.getChannelData(0);
+    const maxS = Math.min(data.length, sr * 40);
+    const ds = Math.floor(sr / 3000);
+    const down = new Float32Array(Math.ceil(maxS / ds));
+    for (let i = 0, j = 0; i < maxS; i += ds, j++) down[j] = data[i];
+    const dsr = sr / ds;
+    const wsz = Math.floor(dsr * 0.025);
+    const E = [];
+    for (let i = 0; i < down.length; i += wsz) {
+      let s = 0;
+      for (let j = 0; j < wsz && i + j < down.length; j++) s += down[i + j] * down[i + j];
+      E.push(Math.sqrt(s / wsz));
+    }
+    const onset = new Float32Array(E.length - 1);
+    for (let i = 1; i < E.length; i++) { 
+      const d = E[i] - E[i - 1]; 
+      onset[i - 1] = d > 0 ? d : 0; 
+    }
+    const efr = dsr / wsz;
+    const minP = Math.floor(efr * 60 / 200);
+    const maxP = Math.floor(efr * 60 / 60);
+    let bestP = minP, bestS = -1;
+    for (let p = minP; p <= maxP; p++) {
+      let s = 0;
+      for (let i = 0; i + p < onset.length; i++) s += onset[i] * onset[i + p];
+      if (s > bestS) { bestS = s; bestP = p; }
+    }
+    let bpm = (efr / bestP) * 60;
+    while (bpm < 80) bpm *= 2;
+    while (bpm > 180) bpm /= 2;
+    if (bpm < 40 || bpm > 240) bpm = 120;
+    return Math.round(bpm * 10) / 10;
+  }
+
+  // --- Key detection ---
+  const KS_MAJ = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+  const KS_MIN = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+  const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  function detectKey(buf, cb) {
+    try {
+      const sr = buf.sampleRate;
+      const len = Math.min(buf.length, sr * 30);
+      const data = buf.getChannelData(0).slice(0, len);
+      const chroma = new Float32Array(12).fill(0);
+      const fft = 4096, hop = 2048;
+      let frames = 0;
+      for (let start = 0; start + fft < data.length; start += hop) {
+        for (let m = 36; m < 96; m++) {
+          const freq = 440 * Math.pow(2, (m - 69) / 12);
+          const omega = 2 * Math.PI * freq / sr;
+          let re = 0, im = 0;
+          for (let j = 0; j < fft; j += 3) {
+            re += data[start + j] * Math.cos(omega * j);
+            im -= data[start + j] * Math.sin(omega * j);
+          }
+          chroma[m % 12] += Math.sqrt(re * re + im * im);
+        }
+        frames++;
+        if (frames > 20) break;
+      }
+      const mx = Math.max(...chroma) || 1;
+      for (let k = 0; k < 12; k++) chroma[k] /= mx;
+      let bestKey = 'C', bestScore = -Infinity;
+      for (let r = 0; r < 12; r++) {
+        let sm = 0, sn = 0;
+        for (let j = 0; j < 12; j++) {
+          sm += chroma[j] * KS_MAJ[(j - r + 12) % 12];
+          sn += chroma[j] * KS_MIN[(j - r + 12) % 12];
+        }
+        if (sm > bestScore) { bestScore = sm; bestKey = NOTES[r]; }
+        if (sn > bestScore) { bestScore = sn; bestKey = NOTES[r] + 'm'; }
+      }
+      cb(bestKey);
+    } catch (e) {
+      cb(null);
+    }
+  }
+
+  // --- Animation tick ---
+  function tick() {
+    for (let i = 0; i < N; i++) {
+      const d = D[i];
+      if (!d.buf || !d.playing) continue;
+      
+      const elapsed = (ctx.currentTime - d.st) * d.speed;
+      let pos;
+      
+      if (d.loopMode === 'beat' && d.loopBeats > 0 && d.bpm > 0) {
+        const ll = (60 / d.bpm) * d.loopBeats;
+        const le = d.loopStart + ll;
+        pos = (le <= d.buf.duration) ? d.loopStart + (elapsed % ll) : elapsed % d.buf.duration;
+      } 
+      else if (d.loopMode === 'free' && d.freeLoopEnd > d.freeLoopStart) {
+        const loopLen = d.freeLoopEnd - d.freeLoopStart;
+        pos = d.freeLoopStart + (elapsed % loopLen);
+      }
+      else {
+        pos = elapsed % d.buf.duration;
+      }
+      
+      updatePlayheadPos(i, pos);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // --- Resize ---
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      for (let i = 0; i < N; i++) {
+        if (D[i].peaks) { drawWF(i); drawBG(i); }
+      }
+    }, 150);
+  });
+
+  window.setMaster = function(i) {
+    masterIdx = i;
+    for (let j = 0; j < N; j++) {
+      $(`dk-${j}`).classList.toggle('master', j === i);
+    }
+  };
+
+  window.syncDeck = function(i) {
+    if (i === masterIdx) { status(i, 'Già Master'); return; }
+    const mb = D[masterIdx].bpmNative;
+    const db = D[i].bpmNative;
+    if (!mb || !db) { alert('BPM mancante'); return; }
+    const ratio = Math.min(2, Math.max(0.5, mb / db));
+    D[i].bpm = mb;
+    window.setSpeed(i, ratio);
+    status(i, `Sync ${mb.toFixed(1)} BPM (x${ratio.toFixed(3)})`);
+  };
+
+  // --- Inizializza ---
+  window.setMaster(0);
+  
+  for (let i = 0; i < N; i++) {
+    window.setZoom(i, 1);
+    window.setZoomPos(i, 0.5);
+  }
+  
+  tick();
+
+})();
+</script>
+</body>
+</html>
